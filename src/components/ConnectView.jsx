@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { RefreshCw, Link2, FileText, ChevronRight, AlertCircle, Info } from 'lucide-react';
 import { parseAmisGrades } from '../utils/gradeUtils';
-import { extractCredentialsFromUrl, fetchAmisGrades } from '../utils/amisFetch';
+import { extractToken, fetchAmisGrades } from '../utils/amisFetch';
 
 export default function ConnectView({ setSemesters, setStudentInfo }) {
   // URL input state
-  const [amisUrl, setAmisUrl] = useState('');
+  const [tokenInput, setTokenInput] = useState('');
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
@@ -14,7 +14,7 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
   const [pasteError, setPasteError] = useState('');
   
   // Tab toggle (fetch vs paste)
-  const [activeMode, setActiveMode] = useState('fetch'); // 'fetch' or 'paste'
+  const [activeMode, setActiveMode] = useState('token'); // 'token' or 'paste'
 
   const applyGradeData = (data) => {
     const parsedSems = parseAmisGrades(data);
@@ -35,9 +35,9 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
     setSemesters(parsedSems);
   };
 
-  const handleFetchFromAmis = async () => {
-    if (!amisUrl.trim()) {
-      setFetchError('Please paste your AMIS URL or Bearer token.');
+  const handleFetchWithToken = async () => {
+    if (!tokenInput.trim()) {
+      setFetchError('Please paste your Bearer token.');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
     setFetchError('');
 
     try {
-      const { token } = extractCredentialsFromUrl(amisUrl);
+      const token = extractToken(tokenInput);
 
       // Save token for convenience
       localStorage.setItem('amis_token', token);
@@ -54,7 +54,7 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
       applyGradeData(data);
     } catch (err) {
       console.error(err);
-      setFetchError(err.message || 'Connection failed. Your token may have expired — log into AMIS again to get a fresh URL.');
+      setFetchError(err.message || 'Connection failed. Your token may have expired — log into AMIS again to get a fresh token.');
     } finally {
       setIsFetching(false);
     }
@@ -73,6 +73,23 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
     } catch (err) {
       setPasteError(err.message || 'Invalid JSON format. Please verify the copied text.');
     }
+  };
+  
+  const handleFileUpload = (e) => {
+    setPasteError('');
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsedData = JSON.parse(event.target.result);
+        applyGradeData(parsedData);
+      } catch (err) {
+        setPasteError(err.message || 'Invalid JSON file format. Make sure it is a valid grades JSON.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Optional function to bypass with mock data
@@ -133,44 +150,44 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
       {/* Mode Switch Pills */}
       <div className="pill-group" style={{ justifyContent: 'center', marginBottom: '24px' }}>
         <button 
-          className={`pill-item ${activeMode === 'fetch' ? 'active' : ''}`}
-          onClick={() => setActiveMode('fetch')}
+          className={`pill-item ${activeMode === 'token' ? 'active' : ''}`}
+          onClick={() => setActiveMode('token')}
         >
-          AMIS Link
+          Bearer Token
         </button>
         <button 
           className={`pill-item ${activeMode === 'paste' ? 'active' : ''}`}
           onClick={() => setActiveMode('paste')}
         >
-          JSON Payload
+          Upload JSON File
         </button>
       </div>
 
-      {activeMode === 'fetch' ? (
-        /* Direct Fetch via AMIS URL */
+      {activeMode === 'token' ? (
+        /* Direct Fetch via Bearer Token */
         <div className="card">
           <h3 style={{ fontSize: '14px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Link2 size={14} className="text-success" /> Paste your AMIS URL
+            <Link2 size={14} className="text-success" /> Paste your Bearer Token
           </h3>
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-            Copy the full URL from your browser address bar after logging into AMIS.
+            Open DevTools (F12) on the AMIS site, find the <code style={{ color: 'var(--primary-color)' }}>Authorization</code> header in any API request, and copy the token value.
           </p>
 
           <div className="form-group">
-            <label className="form-label">AMIS URL or Bearer Token</label>
+            <label className="form-label">Bearer Token</label>
             <input 
               type="text" 
               className="form-control" 
-              placeholder="https://amis.uplb.edu.ph/personal-information/?token=..."
-              value={amisUrl}
-              onChange={(e) => setAmisUrl(e.target.value)}
+              placeholder="Bearer 10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}
             />
           </div>
 
           <button 
             className="btn btn-primary mt-2" 
-            onClick={handleFetchFromAmis} 
+            onClick={handleFetchWithToken} 
             disabled={isFetching}
           >
             {isFetching ? <RefreshCw size={16} className="spinner" /> : <ChevronRight size={16} />} 
@@ -195,21 +212,34 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
           )}
         </div>
       ) : (
-        /* Copy Paste JSON Layout */
+        /* Copy Paste or Upload JSON Layout */
         <div className="card">
-          <h3 style={{ fontSize: '14px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            Paste AMIS JSON Data
+          <h3 style={{ fontSize: '14px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FileText size={14} className="text-success" /> Upload or Paste AMIS JSON Data
           </h3>
-          <p style={{ fontSize: '0.75rem', marginBottom: '14px' }}>
-            Copy the full JSON response from the grades API stream and load it manually below.
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
+            Select a downloaded json file or paste the JSON text payload directly.
           </p>
+
+          <div className="form-group">
+            <label className="form-label">Upload `.json` File</label>
+            <input 
+              type="file" 
+              accept=".json"
+              className="form-control" 
+              onChange={handleFileUpload}
+              style={{ fontSize: '11px', padding: '6px' }}
+            />
+          </div>
+
+          <div style={{ textAlign: 'center', margin: '8px 0', fontSize: '10px', color: 'var(--neutral)' }}>— OR PASTE PLAIN TEXT —</div>
 
           <div className="form-group">
             <textarea 
               className="form-control" 
-              rows="6" 
-              placeholder='{"student_number": "202X-XXXXX", "grades": [...] }'
-              style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', resize: 'vertical' }}
+              rows="4" 
+              placeholder='{"student_grades": { ... } }'
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', resize: 'vertical' }}
               value={pastedJson}
               onChange={(e) => setPastedJson(e.target.value)}
             />
@@ -241,39 +271,39 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
       {/* How-to Guide Card */}
       <div className="card" style={{ backgroundColor: 'var(--bg-surface-elevated)' }}>
         <h4 style={{ fontSize: '12px', color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Info size={14} className="text-success" /> How to connect
+          <Info size={14} className="text-success" /> How to find your Bearer Token
         </h4>
-        <ol style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <li>Log in to <strong>amis.uplb.edu.ph</strong> in your browser.</li>
-          <li>Once logged in, <strong>copy the full URL</strong> from the address bar.</li>
-          <li>It will look like this:</li>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+          If logging into AMIS hides the URL token in the address bar, follow this quick bypass:
+        </p>
+        <ol style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <li>Log in to <strong>amis.uplb.edu.ph</strong> in another browser tab.</li>
+          <li>Press <strong>F12</strong> (or right-click anywhere and select <strong>Inspect</strong>) and click on the <strong>Console</strong> tab.</li>
+          <li>Paste the following command and press <strong>Enter</strong> to automatically copy the token to your clipboard:
+            <pre style={{ 
+              backgroundColor: 'var(--bg-app)', 
+              borderRadius: '4px', 
+              padding: '8px 10px', 
+              fontSize: '10px', 
+              fontFamily: 'var(--font-mono)', 
+              overflowX: 'auto', 
+              marginTop: '6px', 
+              border: '1px solid var(--border-color)',
+              color: 'var(--primary-color)',
+              textAlign: 'left',
+              margin: '6px 0',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all'
+            }}>
+              {`let t="";Object.keys(localStorage).concat(Object.keys(sessionStorage)).forEach(k=>{const v=localStorage.getItem(k)||sessionStorage.getItem(k);if(v&&v.includes("|"))t=v});if(t){copy(t);console.log("Token copied to clipboard:\\n"+t)}else{console.log("Token not found. Check Application -> Local Storage")}`}
+            </pre>
+          </li>
+          <li>Come back here, paste the copied token into the <strong>Bearer Token</strong> field above, and click <strong>Fetch and Connect</strong>.</li>
         </ol>
-
-        <div style={{ 
-          backgroundColor: 'var(--bg-app)', 
-          borderRadius: '4px', 
-          padding: '8px 10px', 
-          fontSize: '10px', 
-          fontFamily: 'var(--font-mono)', 
-          overflowX: 'auto', 
-          marginTop: '10px', 
-          whiteSpace: 'nowrap',
-          textAlign: 'left',
-          border: '1px solid var(--border-color)',
-          color: 'var(--text-muted)'
-        }}>
-          https://amis.uplb.edu.ph/.../?<span style={{ color: 'var(--primary-color)' }}>token=10442313%7Cyifp...</span>&session_id=...
-        </div>
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-          Paste that entire URL into the <strong>AMIS Link</strong> field above. The token is automatically extracted and used to fetch your grades.
-        </p>
-        <p style={{ fontSize: '0.68rem', color: 'var(--secondary-color)', marginTop: '6px' }}>
-          Tokens expire after your AMIS session ends. If fetching fails, log in to AMIS again to get a fresh URL.
-        </p>
       </div>
 
       {/* Optional Demo Button */}
-      <div className="text-center mt-2">
+      <div className="text-center mt-2" style={{ marginBottom: '20px' }}>
         <button 
           onClick={handleLoadDemo} 
           style={{ background: 'none', border: 'none', color: 'var(--neutral)', fontSize: '0.75rem', textDecoration: 'underline', cursor: 'pointer' }}

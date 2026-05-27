@@ -6,15 +6,7 @@ Designed with **Green Deck** aesthetics (dark-first, Spotify-inspired interfaces
 
 ---
 
-## 📸 Screenshots
-
-### 1. Secure AMIS Connection Gate
-Users can securely authenticate by pasting their AMIS redirect URL, pasting a manually copied JSON payload, or exploring the application using simulated sandbox data.
-
-![Secure AMIS Connect Gate](./public/screenshots/connect.png)
-
-### 2. Premium Analytics Dashboard
-An interactive dashboard displaying computed GWA, current Latin Honors standing, curriculum progress indicators, and historical semester-by-semester metrics.
+## 📸 Screenshot
 
 ![Grades Analytics Dashboard](./public/screenshots/dashboard.png)
 
@@ -22,7 +14,7 @@ An interactive dashboard displaying computed GWA, current Latin Honors standing,
 
 ## ✨ Features
 
-- **⚡ Direct AMIS Connection**: Paste your session URL from your browser address bar after logging in to extract your secure Bearer token and download records.
+- **⚡ Direct AMIS Connection**: Paste your secure Bearer token (extracted from the browser) to instantly download records from the AMIS API.
 - **🛡️ Local-First & Private**: Your academic details, tokens, and session details are processed entirely in the browser and stored locally via `localStorage`. No data is uploaded to external servers.
 - **📊 Interactive GWA Gauge**: Visualize your standing against university thresholds with a radial gauge and honor level indicators.
 - **🏆 Latin Honors Eligibility**: Computes standing using official UPLB academic rules and checks eligibility against criteria rules (accounting for failed grades `5.00`, incompletes `INC`, or dropped courses `DRP`).
@@ -35,25 +27,39 @@ An interactive dashboard displaying computed GWA, current Latin Honors standing,
 
 Since the official AMIS API resides behind secure campus endpoints, the application provides two methods to connect your data:
 
-### Method A: The AMIS Link (Recommended)
-1. Log in to your [AMIS Portal](https://amis.uplb.edu.ph/) in another browser tab.
-2. Copy the **entire URL** from the browser's address bar. It will look like this:
-   `https://amis.uplb.edu.ph/personal-information/?token=10442313%7CyifpOkPPWX...&session_id=...`
-3. Paste that link into the **AMIS Link** input tab on the connection screen and click **Fetch and Connect**.
+### Method A: Bearer Token (Recommended)
+You can get your Bearer token in two ways:
 
-### Method B: Manual JSON Copy-Paste
-If the direct link fails or has expired, you can pull your data manually using the developer console:
-1. Log in to [amis.uplb.edu.ph](https://amis.uplb.edu.ph/).
+#### Option 1: One-click Console Script (Easiest)
+1. Log in to your [AMIS Portal](https://amis.uplb.edu.ph/) in another browser tab.
 2. Open your browser's Developer Tools (`F12` or `Ctrl + Shift + I` / `Cmd + Option + I`) and click the **Console** tab.
+3. Paste the following script and press **Enter** to instantly copy your token to your clipboard:
+   ```javascript
+   let t="";Object.keys(localStorage).concat(Object.keys(sessionStorage)).forEach(k=>{const v=localStorage.getItem(k)||sessionStorage.getItem(k);if(v&&v.includes("|"))t=v});if(t){copy(t);console.log("Token copied!")}
+   ```
+4. Paste the copied token into the **Bearer Token** input field in this app, then click **Fetch and Connect**.
+
+#### Option 2: DevTools Network Tab
+1. Log in to your [AMIS Portal](https://amis.uplb.edu.ph/).
+2. Open DevTools (`F12`) and select the **Network** tab.
+3. Reload the page, click on any `api-amis.uplb.edu.ph` request, and go to the **Headers** pane.
+4. Copy the value of the `Authorization` header starting with `Bearer ...`.
+5. Paste it into the **Bearer Token** input field in this app, then click **Fetch and Connect**.
+
+### Method B: Manual JSON Upload
+If the direct fetch fails or your token has expired, you can download your grades as a file:
+1. Log in to [amis.uplb.edu.ph](https://amis.uplb.edu.ph/).
+2. Open your browser's Developer Tools (`F12`) and click the **Console** tab.
 3. Paste this script and press **Enter**:
    ```javascript
    fetch("https://api-amis.uplb.edu.ph/api/students/grades?summarize=true", {
      credentials: "include"
    })
-   .then(r => r.json())
-   .then(data => console.log(JSON.stringify(data)))
+   .then(r => r.text()).then(t => { const b = new Blob([t], { type: "application/json" });
+   const a = document.createElement("a"); a.href = URL.createObjectURL(b);
+   a.download = "amis-grades.json"; a.click(); });
    ```
-4. Copy the outputted JSON string, click the **JSON Payload** tab in this app, paste the JSON, and hit **Import JSON Data**.
+4. Come back here, switch to the **Upload JSON File** tab, and choose the downloaded `amis-grades.json` file.
 
 ---
 

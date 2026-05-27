@@ -1,39 +1,28 @@
 /**
- * Extracts the Bearer token from an AMIS redirect URL.
+ * Extracts the Bearer token from user input.
  *
- * Expected URL format:
- *   https://amis.uplb.edu.ph/personal-information/?token=10442313%7CyifpOkPPWXMo0F0aHXPSKeXMPlz0trZ2t6pU1yp4&session_id=...
+ * Accepts any of these formats:
+ *   - "Bearer 10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
+ *   - "10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
  *
- * The `token` query param is URL-encoded — `%7C` is `|`.
- * The decoded token becomes: `10442313|yifpOkPPWXMo0F0aHXPSKeXMPlz0trZ2t6pU1yp4`
- *
- * @param {string} amisUrl - The full AMIS URL copied from the browser address bar.
- * @returns {{ token: string, sessionId: string | null }} The extracted credentials.
- * @throws {Error} If the URL doesn't contain a valid token parameter.
+ * @param {string} input - The token string pasted by the user.
+ * @returns {string} The cleaned Bearer token (without the "Bearer " prefix).
+ * @throws {Error} If the input is empty or doesn't look like a valid token.
  */
-export function extractCredentialsFromUrl(amisUrl) {
-  const trimmed = amisUrl.trim();
+export function extractToken(input) {
+  let token = input.trim();
 
-  // If the user pasted just a raw token (no URL), return it directly
-  if (!trimmed.startsWith('http')) {
-    return { token: trimmed, sessionId: null };
+  // Strip "Bearer " prefix if the user included it
+  if (token.toLowerCase().startsWith('bearer ')) {
+    token = token.slice(7).trim();
   }
 
-  try {
-    const url = new URL(trimmed);
-    const token = url.searchParams.get('token');
-    const sessionId = url.searchParams.get('session_id');
-
-    if (!token) {
-      throw new Error('No "token" parameter found in the URL.');
-    }
-
-    // URL.searchParams.get() automatically decodes %7C → |
-    return { token, sessionId };
-  } catch (err) {
-    if (err.message.includes('token')) throw err;
-    throw new Error('Invalid URL format. Please paste the full AMIS address bar URL.');
+  // Basic sanity check — AMIS tokens contain a pipe separator
+  if (!token || !token.includes('|')) {
+    throw new Error('Invalid token format. Expected something like: 10442414|xhdghBMzLo7...');
   }
+
+  return token;
 }
 
 /**

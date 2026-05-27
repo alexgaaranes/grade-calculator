@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, RefreshCw, Link2, FileText, Trash2 } from 'lucide-react';
 import { parseAmisGrades } from '../utils/gradeUtils';
-import { extractCredentialsFromUrl, fetchAmisGrades } from '../utils/amisFetch';
+import { extractToken, fetchAmisGrades } from '../utils/amisFetch';
 
 export default function SettingsView({ 
   semesters, 
@@ -17,8 +17,8 @@ export default function SettingsView({
   const [program, setProgram] = useState(studentInfo.program);
   const [curriculumUnits, setCurriculumUnits] = useState(studentInfo.curriculumUnits);
 
-  // Fetch via URL states
-  const [amisUrl, setAmisUrl] = useState(localStorage.getItem('amis_token') || '');
+  // Fetch via Token states
+  const [amisToken, setAmisToken] = useState(localStorage.getItem('amis_token') || '');
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [fetchSuccess, setFetchSuccess] = useState(false);
@@ -42,8 +42,8 @@ export default function SettingsView({
   };
 
   const handleFetchFromAmis = async () => {
-    if (!amisUrl.trim()) {
-      setFetchError('Please paste your AMIS URL or Bearer token.');
+    if (!amisToken.trim()) {
+      setFetchError('Please paste your Bearer token.');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function SettingsView({
     setFetchSuccess(false);
 
     try {
-      const { token } = extractCredentialsFromUrl(amisUrl);
+      const token = extractToken(amisToken);
       localStorage.setItem('amis_token', token);
 
       const data = await fetchAmisGrades(token);
@@ -102,7 +102,7 @@ export default function SettingsView({
     if (window.confirm("This will erase all current records and log you out. Do you wish to proceed?")) {
       setSemesters([]);
       setStudentInfo({ name: '', studentNumber: '', program: '', curriculumUnits: 142 });
-      setAmisUrl('');
+      setAmisToken('');
       localStorage.removeItem('amis_token');
       localStorage.removeItem('grades_semesters');
       localStorage.removeItem('grades_student_info');
@@ -113,24 +113,24 @@ export default function SettingsView({
   return (
     <div className="container">
 
-      {/* API Fetcher via AMIS URL */}
+      {/* API Fetcher via Bearer Token */}
       <div className="card">
         <h3 style={{ fontSize: '1rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Link2 size={16} className="text-success" /> Refresh from AMIS
         </h3>
         
         <p style={{ fontSize: '0.75rem', marginBottom: '16px' }}>
-          Paste the full URL from your AMIS browser address bar to re-fetch your latest grades.
+          Paste a fresh Bearer token from the AMIS portal requests in DevTools to re-fetch your latest grades.
         </p>
 
         <div className="form-group">
-          <label className="form-label">AMIS URL or Bearer Token</label>
+          <label className="form-label">Bearer Token</label>
           <input 
             type="text" 
             className="form-control" 
-            placeholder="https://amis.uplb.edu.ph/personal-information/?token=..."
-            value={amisUrl}
-            onChange={(e) => setAmisUrl(e.target.value)}
+            placeholder="Bearer 10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
+            value={amisToken}
+            onChange={(e) => setAmisToken(e.target.value)}
             style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}
           />
         </div>
