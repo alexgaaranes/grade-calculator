@@ -1,0 +1,20 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api-proxy': {
+        target: 'https://api-amis.uplb.edu.ph',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-proxy/, ''),
+        headers: {
+          'Origin': 'https://amis.uplb.edu.ph',
+          'Referer': 'https://amis.uplb.edu.ph/'
+        }
+      }
+    }
+  }
+})
