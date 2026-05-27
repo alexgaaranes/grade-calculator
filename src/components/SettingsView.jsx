@@ -113,22 +113,22 @@ export default function SettingsView({
   return (
     <div className="container">
 
-      {/* API Fetcher via Bearer Token */}
+      {/* API Fetcher via Bearer Token / URL */}
       <div className="card">
         <h3 style={{ fontSize: '1rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Link2 size={16} className="text-success" /> Refresh from AMIS
         </h3>
         
         <p style={{ fontSize: '0.75rem', marginBottom: '16px' }}>
-          Paste a fresh Bearer token from the AMIS portal requests in DevTools to re-fetch your latest grades.
+          Paste a fresh Bearer token or AMIS redirect URL to re-fetch your latest grades.
         </p>
 
         <div className="form-group">
-          <label className="form-label">Bearer Token</label>
+          <label className="form-label">Bearer Token or AMIS URL</label>
           <input 
             type="text" 
             className="form-control" 
-            placeholder="Bearer 10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
+            placeholder="Paste token or https://amis.uplb.edu.ph/personal-information/?token=..."
             value={amisToken}
             onChange={(e) => setAmisToken(e.target.value)}
             style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}

@@ -10,19 +10,31 @@
  * @throws {Error} If the input is empty or doesn't look like a valid token.
  */
 export function extractToken(input) {
-  let token = input.trim();
+  let decoded = decodeURIComponent(input.trim());
+
+  // Check if it is a URL/link containing the token
+  if (decoded.includes('token=')) {
+    try {
+      const tokenMatch = decoded.match(/token=([^&]+)/);
+      if (tokenMatch && tokenMatch[1]) {
+        decoded = tokenMatch[1];
+      }
+    } catch (e) {
+      // fallback to input
+    }
+  }
 
   // Strip "Bearer " prefix if the user included it
-  if (token.toLowerCase().startsWith('bearer ')) {
-    token = token.slice(7).trim();
+  if (decoded.toLowerCase().startsWith('bearer ')) {
+    decoded = decoded.slice(7).trim();
   }
 
   // Basic sanity check — AMIS tokens contain a pipe separator
-  if (!token || !token.includes('|')) {
-    throw new Error('Invalid token format. Expected something like: 10442414|xhdghBMzLo7...');
+  if (!decoded || !decoded.includes('|')) {
+    throw new Error('Invalid format. Expected a Bearer token or an AMIS redirect link containing a token.');
   }
 
-  return token;
+  return decoded;
 }
 
 /**

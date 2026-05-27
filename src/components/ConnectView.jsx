@@ -153,7 +153,7 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
           className={`pill-item ${activeMode === 'token' ? 'active' : ''}`}
           onClick={() => setActiveMode('token')}
         >
-          Bearer Token
+          Token / AMIS URL
         </button>
         <button 
           className={`pill-item ${activeMode === 'paste' ? 'active' : ''}`}
@@ -164,21 +164,21 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
       </div>
 
       {activeMode === 'token' ? (
-        /* Direct Fetch via Bearer Token */
+        /* Direct Fetch via Bearer Token / URL */
         <div className="card">
           <h3 style={{ fontSize: '14px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Link2 size={14} className="text-success" /> Paste your Bearer Token
+            <Link2 size={14} className="text-success" /> Paste your Token or AMIS URL
           </h3>
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-            Open DevTools (F12) on the AMIS site, find the <code style={{ color: 'var(--primary-color)' }}>Authorization</code> header in any API request, and copy the token value.
+            Paste your raw Bearer Token (e.g. from cookies/console) OR the full AMIS redirect link from your browser's address bar.
           </p>
 
           <div className="form-group">
-            <label className="form-label">Bearer Token</label>
+            <label className="form-label">Bearer Token or AMIS URL</label>
             <input 
               type="text" 
               className="form-control" 
-              placeholder="Bearer 10442414|xhdghBMzLo7CN2Gu9lDdcx8Byp6e2f9yyHf0RQvj"
+              placeholder="Paste token or https://amis.uplb.edu.ph/personal-information/?token=..."
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}
