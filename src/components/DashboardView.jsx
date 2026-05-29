@@ -21,7 +21,7 @@ export default function DashboardView({ semesters, studentInfo }) {
       {/* Profile Header */}
       <div className="card text-center" style={{ background: 'linear-gradient(135deg, var(--primary-color), var(--primary-hover))', border: 'none', color: '#fff' }}>
         <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 500, opacity: 0.9 }}>{studentInfo.name}</h3>
-        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.8rem', marginTop: '2px', fontWeight: 600 }}>{studentInfo.studentNumber} • {studentInfo.program}</p>
+        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.8rem', marginTop: '2px', fontWeight: 600 }}>SAIS ID: {studentInfo.studentNumber} • {studentInfo.program}</p>
         <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', marginTop: '1px' }}>{studentInfo.college}</p>
       </div>
 

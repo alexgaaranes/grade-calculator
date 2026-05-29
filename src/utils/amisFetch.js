@@ -38,23 +38,31 @@ export function extractToken(input) {
 }
 
 /**
- * Fetches grades from the AMIS API using a Bearer token.
- *
- * Mirrors the working approach from test.js:
- *   - Only `Authorization: Bearer <token>` is required
- *   - The response body is a ReadableStream that must be decoded chunk-by-chunk
- *   - No x-session-id header is needed
+ * Fetches grades from the AMIS API using a Bearer token and optional session ID.
  *
  * @param {string} bearerToken - The raw token value (without the "Bearer " prefix).
+ * @param {string} sessionId - Optional X-Session-Id header value.
  * @returns {Promise<object>} The parsed JSON grades data.
  */
-export async function fetchAmisGrades(bearerToken) {
-  const response = await fetch('/api-proxy/api/students/grades?summarize=true', {
+export async function fetchAmisGrades(bearerToken, sessionId) {
+  // Use the real API URL in production extension, or proxy in development web
+  const isExtension = typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.id;
+  const baseUrl = isExtension ? 'https://api-amis.uplb.edu.ph' : '/api-proxy';
+  
+  const headers = {
+    'Accept': 'application/json, text/plain, */*',
+    'Authorization': `Bearer ${bearerToken}`,
+    'Origin': 'https://amis.uplb.edu.ph',
+    'Referer': 'https://amis.uplb.edu.ph/',
+  };
+
+  if (sessionId) {
+    headers['x-session-id'] = sessionId;
+  }
+
+  const response = await fetch(`${baseUrl}/api/students/grades?summarize=true`, {
     method: 'GET',
-    headers: {
-      'Accept': 'application/json, text/plain, */*',
-      'Authorization': `Bearer ${bearerToken}`,
-    },
+    headers: headers,
   });
 
   if (!response.ok) {
@@ -62,7 +70,6 @@ export async function fetchAmisGrades(bearerToken) {
   }
 
   // The AMIS API returns a ReadableStream body.
-  // We must consume it chunk-by-chunk with a TextDecoder, matching test.js behavior.
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let result = '';
@@ -72,12 +79,45 @@ export async function fetchAmisGrades(bearerToken) {
     if (done) break;
     result += decoder.decode(value, { stream: true });
   }
-  // Flush the decoder
   result += decoder.decode();
 
   try {
     return JSON.parse(result);
   } catch {
-    throw new Error('Failed to parse AMIS response as JSON. The token may have expired.');
+    throw new Error('Failed to parse AMIS grades response as JSON.');
   }
+}
+
+/**
+ * Fetches authenticated user information.
+ * 
+ * @param {string} bearerToken - The raw token value.
+ * @param {string} sessionId - Optional X-Session-Id header value.
+ * @returns {Promise<object>} The user auth data.
+ */
+export async function fetchAmisAuthUser(bearerToken, sessionId) {
+  const isExtension = typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.id;
+  const baseUrl = isExtension ? 'https://api-amis.uplb.edu.ph' : '/api-proxy';
+
+  const headers = {
+    'Accept': 'application/json, text/plain, */*',
+    'Authorization': `Bearer ${bearerToken}`,
+    'Origin': 'https://amis.uplb.edu.ph',
+    'Referer': 'https://amis.uplb.edu.ph/',
+  };
+
+  if (sessionId) {
+    headers['x-session-id'] = sessionId;
+  }
+
+  const response = await fetch(`${baseUrl}/api/auth/user`, {
+    method: 'GET',
+    headers: headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`AMIS Auth API returned status ${response.status}`);
+  }
+
+  return response.json();
 }

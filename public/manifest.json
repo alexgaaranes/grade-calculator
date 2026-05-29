@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "UPLB Grade Calculator",
+  "version": "1.0.0",
+  "description": "Calculate and track your GWA with automatic AMIS integration.",
+  "permissions": [
+    "webRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api-amis.uplb.edu.ph/*",
+    "https://amis.uplb.edu.ph/*"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "favicon.svg",
+      "32": "favicon.svg",
+      "48": "favicon.svg",
+      "128": "favicon.svg"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "favicon.svg",
+    "32": "favicon.svg",
+    "48": "favicon.svg",
+    "128": "favicon.svg"
+  }
+}

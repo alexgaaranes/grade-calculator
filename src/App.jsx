@@ -8,35 +8,68 @@ import SettingsView from './components/SettingsView';
 import ConnectView from './components/ConnectView';
 
 function App() {
-  // Load initial state from LocalStorage or default to empty for session gate
-  const [semesters, setSemesters] = useState(() => {
-    const saved = localStorage.getItem('grades_semesters');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [studentInfo, setStudentInfo] = useState(() => {
-    const saved = localStorage.getItem('grades_student_info');
-    return saved ? JSON.parse(saved) : { name: '', studentNumber: '', program: '', curriculumUnits: 142 };
-  });
-
+  const [semesters, setSemesters] = useState([]);
+  const [studentInfo, setStudentInfo] = useState({ name: '', studentNumber: '', program: '', curriculumUnits: 142 });
   const [activeTab, setActiveTab] = useState('dashboard');
-  
-  // Theme state forced to dark for Green Deck
   const [theme, setTheme] = useState('dark');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [simSemesters, setSimSemesters] = useState([]);
 
-  // Sync state changes with localStorage
+  // Load initial state from chrome.storage.local or fallback to LocalStorage
   useEffect(() => {
-    localStorage.setItem('grades_semesters', JSON.stringify(semesters));
-  }, [semesters]);
+    const loadData = async () => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['grades_semesters', 'grades_student_info', 'grades_theme'], (result) => {
+          if (result.grades_semesters) setSemesters(result.grades_semesters);
+          if (result.grades_student_info) setStudentInfo(result.grades_student_info);
+          if (result.grades_theme) setTheme(result.grades_theme);
+          setIsLoaded(true);
+        });
+      } else {
+        const savedSemesters = localStorage.getItem('grades_semesters');
+        const savedInfo = localStorage.getItem('grades_student_info');
+        const savedTheme = localStorage.getItem('grades_theme');
+        
+        if (savedSemesters) setSemesters(JSON.parse(savedSemesters));
+        if (savedInfo) setStudentInfo(JSON.parse(savedInfo));
+        if (savedTheme) setTheme(savedTheme);
+        setIsLoaded(true);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Sync state changes with storage
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ grades_semesters: semesters });
+    } else {
+      localStorage.setItem('grades_semesters', JSON.stringify(semesters));
+    }
+  }, [semesters, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('grades_student_info', JSON.stringify(studentInfo));
-  }, [studentInfo]);
+    if (!isLoaded) return;
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ grades_student_info: studentInfo });
+    } else {
+      localStorage.setItem('grades_student_info', JSON.stringify(studentInfo));
+    }
+  }, [studentInfo, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('grades_theme', theme);
+    if (!isLoaded) return;
     document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ grades_theme: theme });
+    } else {
+      localStorage.setItem('grades_theme', theme);
+    }
+  }, [theme, isLoaded]);
+
+  // Show nothing until state is loaded from storage
+  if (!isLoaded) return null;
 
   // If there are no semesters, show the Connect screen to collect credentials/JSON first
   if (semesters.length === 0) {
@@ -54,7 +87,12 @@ function App() {
       case 'grades':
         return <GradesView semesters={semesters} setSemesters={setSemesters} />;
       case 'what-if':
-        return <WhatIfView semesters={semesters} studentInfo={studentInfo} />;
+        return <WhatIfView 
+          semesters={semesters} 
+          studentInfo={studentInfo} 
+          simSemesters={simSemesters}
+          setSimSemesters={setSimSemesters}
+        />;
       case 'settings':
         return <SettingsView 
           semesters={semesters} 

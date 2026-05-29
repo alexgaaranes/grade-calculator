@@ -1,20 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: {
-    proxy: {
-      '/api-proxy': {
-        target: 'https://api-amis.uplb.edu.ph',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-proxy/, ''),
-        headers: {
-          'Origin': 'https://amis.uplb.edu.ph',
-          'Referer': 'https://amis.uplb.edu.ph/'
-        }
-      }
-    }
-  }
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        background: resolve(__dirname, 'src/background.js'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          return chunkInfo.name === 'background' ? '[name].js' : 'assets/[name]-[hash].js';
+        },
+      },
+    },
+  },
 })
