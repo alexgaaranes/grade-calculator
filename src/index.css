@@ -33,6 +33,7 @@
   font-family: var(--font-sans);
 }
 
+/* Extension Fixed Sizing */
 html {
   width: 400px;
   height: 600px;

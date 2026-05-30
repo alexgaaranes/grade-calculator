@@ -21,8 +21,30 @@ export default function GradesView({ semesters, setSemesters }) {
 
   // State for Add Semester Modal
   const [isSemModalOpen, setIsSemModalOpen] = useState(false);
-  const [semYear, setSemYear] = useState('2025-2026');
+  
+  // Calculate default Academic Year based on current date
+  const defaultAY = (() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed, 6 is July
+    // If month is July or later, we are in AY YYYY-YYYY+1
+    return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  })();
+
+  const [semYear, setSemYear] = useState(defaultAY);
   const [semTerm, setSemTerm] = useState('1st Semester');
+
+  // Generate a range of academic years
+  const academicYears = (() => {
+    const years = [];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    // Range: Current Year + 10 down to 2010
+    for (let i = currentYear + 10; i >= 2010; i--) {
+      years.push(`${i}-${i + 1}`);
+    }
+    return years;
+  })();
 
   const toggleSemester = (id) => {
     setExpandedSems(prev => ({
@@ -326,7 +348,7 @@ export default function GradesView({ semesters, setSemesters }) {
               <div className="form-group" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                 <div>
                   <label className="form-label" style={{ marginBottom: '2px' }}>Exclude from GWA</label>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Required for PE, NSTP, and non-credit courses.</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Required for HK, NSTP, and non-credit courses.</p>
                 </div>
                 <label className="switch">
                   <input 
@@ -369,14 +391,16 @@ export default function GradesView({ semesters, setSemesters }) {
             <form onSubmit={handleAddSemester}>
               <div className="form-group">
                 <label className="form-label">Academic Year</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="e.g. 2025-2026" 
+                <select 
+                  className="form-control"
                   value={semYear}
                   onChange={(e) => setSemYear(e.target.value)}
                   required
-                />
+                >
+                  {academicYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">

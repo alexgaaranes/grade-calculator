@@ -75,11 +75,12 @@ export const DEFAULT_SEMESTERS = [
   }
 ];
 
-// Helper to determine if a course is PE or NSTP
+// Helper to determine if a course is HK or NSTP
 export const shouldAutoExclude = (code) => {
   if (!code) return false;
   const upper = code.toUpperCase();
-  return upper.startsWith("PE") || upper.startsWith("HK") || upper.startsWith("NSTP") || upper.startsWith("KASHP");
+  // UPLB officially uses HK (Human Kinetics) for physical education
+  return upper.startsWith("HK") || upper.startsWith("PE") || upper.startsWith("NSTP") || upper.startsWith("KASHP");
 };
 
 // Calculate GWA
@@ -104,7 +105,7 @@ export const calculateGWA = (semesters) => {
   return totalGwaUnits > 0 ? (totalGradePoints / totalGwaUnits) : 0;
 };
 
-// Calculate total units (including PE/NSTP that are passed)
+// Calculate total units (including HK/NSTP that are passed)
 export const calculateTotalUnits = (semesters) => {
   let totalUnits = 0;
   semesters.forEach(sem => {

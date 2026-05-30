@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Link2, FileText, ChevronRight, AlertCircle, Info, Zap } from 'lucide-react';
+import { RefreshCw, Zap, AlertCircle } from 'lucide-react';
 import { parseAmisGrades } from '../utils/gradeUtils';
 import { extractToken, fetchAmisGrades, fetchAmisAuthUser } from '../utils/amisFetch';
 
 export default function ConnectView({ setSemesters, setStudentInfo }) {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  
   const [capturedToken, setCapturedToken] = useState(null);
   const [capturedSessionId, setCapturedSessionId] = useState(null);
 
-  // Check for captured token & session ID in storage (Extension Mode)
+  // Check for captured token & session ID in extension storage
   useEffect(() => {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.get(['amis_captured_token', 'amis_captured_session_id'], (result) => {
@@ -17,7 +18,6 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
         if (result.amis_captured_session_id) setCapturedSessionId(result.amis_captured_session_id);
       });
 
-      // Listen for changes
       const handleStorageChange = (changes, area) => {
         if (area === 'local') {
           if (changes.amis_captured_token) setCapturedToken(changes.amis_captured_token.newValue);
@@ -38,10 +38,8 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
     try {
       const token = extractToken(targetToken);
 
-      // Save token and session for convenience
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ amis_token: token, amis_session_id: targetSessionId });
-      }
+      // Save session info
+      chrome.storage.local.set({ amis_token: token, amis_session_id: targetSessionId });
 
       // 1. Fetch Grades
       const gradeData = await fetchAmisGrades(token, targetSessionId);
@@ -51,11 +49,10 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
         throw new Error("No academic semester records found.");
       }
 
-      // 2. Fetch Profile from Auth User endpoint
+      // 2. Fetch Profile
       let authUser = {};
       try {
         const authResponse = await fetchAmisAuthUser(token, targetSessionId);
-        // The auth/user response structure: { user: { ... } }
         authUser = authResponse.user || authResponse || {};
       } catch (e) {
         console.warn("Failed to fetch profile info:", e);
@@ -68,7 +65,6 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
         college: gradeData.college_name || authUser.college?.name || "College of Arts and Sciences (CAS)",
         curriculumUnits: 142
       };
-
 
       setStudentInfo(info);
       setSemesters(parsedSems);
@@ -98,7 +94,7 @@ export default function ConnectView({ setSemesters, setStudentInfo }) {
         }}>
           <Zap size={26} color="#FFFFFF" />
         </div>
-        <h1 style={{ fontSize: '1.6rem', marginBottom: '8px' }}>UPLB Grade Calculator</h1>
+        <h1 style={{ fontSize: '1.6rem', marginBottom: '8px' }}>Tres-Hold</h1>
         <p style={{ fontSize: '0.8rem', maxWidth: '320px', margin: '0 auto' }}>
           Automatically sync your grades and student profile from the UPLB AMIS portal.
         </p>

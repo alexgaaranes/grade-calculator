@@ -1,4 +1,4 @@
-# 🎓 UPLB AMIS Grade Calculator & Latin Honors Predictor
+# 🎓 Tres-Hold
 
 A secure, local-first web application for **University of the Philippines Los Baños (UPLB)** students to calculate GWA, simulate future grades, and predict Latin Honors eligibility in real-time.
 
@@ -10,7 +10,7 @@ A secure, local-first web application for **University of the Philippines Los Ba
 - **🛡️ Local-First & Private**: Your academic data and tokens are processed and stored locally in your browser (`localStorage`). No external servers are used.
 - **📊 GWA & Latin Honors Predictor**: Real-time GWA tracking compared against UPLB Latin honors criteria (checks for disqualifiers like `5.00`, `INC`, or `DRP`).
 - **🎯 What-If Simulator**: Predict target grades needed in remaining courses to graduate with honors.
-- **📝 Course Exclusions**: Easily toggle non-academic subjects (e.g. PE, NSTP) to see their impact on your GWA.
+- **📝 Course Exclusions**: Easily toggle non-academic subjects (e.g. HK, NSTP) to see their impact on your GWA.
 
 ---
 
@@ -58,7 +58,7 @@ If the direct API fetch fails, you can download your grades as a file:
 - **Magna Cum Laude**: GWA $\le$ `1.4500`
 - **Cum Laude**: GWA $\le$ `1.7500`
 - **Disqualifiers**: A grade of `5.00`, an unremoved `INC`, or `DRP` flags a warning in the Latin Honors check.
-- **Default Exclusions**: Physical Education (`PE`/`HK`) and NSTP courses are excluded from GWA calculations.
+- **Default Exclusions**: Human Kinetics (`HK`) and NSTP courses are excluded from GWA calculations.
 
 ---
 

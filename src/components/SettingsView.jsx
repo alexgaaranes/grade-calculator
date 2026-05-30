@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, LogOut, Trash2, Zap, AlertCircle } from 'lucide-react';
+import { Save, RefreshCw, LogOut, Zap, AlertCircle } from 'lucide-react';
 import { parseAmisGrades } from '../utils/gradeUtils';
 import { fetchAmisGrades, fetchAmisAuthUser, extractToken } from '../utils/amisFetch';
 
@@ -37,7 +37,7 @@ export default function SettingsView({
 
   const handleSyncFromAmis = async () => {
     if (!capturedToken) {
-      setFetchError('No active AMIS session detected. Please open the AMIS portal in another tab.');
+      setFetchError('No active AMIS session detected.');
       return;
     }
 
@@ -73,7 +73,6 @@ export default function SettingsView({
         curriculumUnits: studentInfo.curriculumUnits
       };
 
-
       setStudentInfo(info);
       setSemesters(parsedSems);
       setFetchSuccess(true);
@@ -86,23 +85,18 @@ export default function SettingsView({
   };
 
   const handleDisconnect = () => {
-    if (window.confirm("Disconnect from AMIS and clear all imported grades? This will return you to the Connect screen.")) {
+    if (window.confirm("Disconnect from AMIS and clear all records?")) {
       setSemesters([]);
       setStudentInfo({ name: '', studentNumber: '', program: '', curriculumUnits: 142 });
       
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.remove([
-          'grades_semesters', 
-          'grades_student_info', 
-          'amis_token', 
-          'amis_session_id',
-          'amis_captured_token',
-          'amis_captured_user_id',
-          'amis_captured_session_id'
-        ]);
-      } else {
-        localStorage.clear();
-      }
+      chrome.storage.local.remove([
+        'grades_semesters', 
+        'grades_student_info', 
+        'amis_token', 
+        'amis_session_id',
+        'amis_captured_token',
+        'amis_captured_session_id'
+      ]);
     }
   };
 
@@ -120,7 +114,7 @@ export default function SettingsView({
         </h3>
         
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-          Your data is currently synced with AMIS. Use the buttons below to refresh your grades or disconnect your account.
+          Your data is synced via AMIS session capture.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -140,7 +134,7 @@ export default function SettingsView({
           )}
 
           <button className="btn btn-outline" onClick={handleDisconnect} style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}>
-            <LogOut size={16} /> Disconnect Account
+            Disconnect Account
           </button>
         </div>
 
@@ -208,7 +202,7 @@ export default function SettingsView({
               <div style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>{studentInfo.curriculumUnits} units</div>
             )}
             <p style={{ fontSize: '0.65rem', color: 'var(--neutral)', marginTop: '4px' }}>
-              *Check your official POS (Program of Study) to verify your total required units.
+              *Check your official POS (Plan of Study) to verify your total required units.
             </p>
           </div>
         </div>
@@ -217,7 +211,7 @@ export default function SettingsView({
       {/* App Version Info */}
       <div className="text-center mt-4">
         <p style={{ fontSize: '0.7rem', color: 'var(--neutral)' }}>
-          UPLB Grade Calculator Extension v1.0.0<br/>
+          Tres-Hold Extension v1.0.0<br/>
           Built for UPLB Students
         </p>
       </div>

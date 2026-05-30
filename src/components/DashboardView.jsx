@@ -1,137 +1,191 @@
-import React from 'react';
-import { Award, BookOpen, TrendingUp, AlertTriangle, CheckCircle, HelpCircle } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Award, BookOpen, TrendingUp, AlertTriangle, CheckCircle, Download, RefreshCw, GraduationCap } from 'lucide-react';
 import { calculateGWA, calculateTotalUnits, getHonorsStatus } from '../utils/gradeUtils';
+import * as htmlToImage from 'html-to-image';
 
 export default function DashboardView({ semesters, studentInfo }) {
   const gwa = calculateGWA(semesters);
   const totalUnits = calculateTotalUnits(semesters);
   const honors = getHonorsStatus(gwa, semesters);
   
-  // Calculate percentage of curriculum units earned
+  const exportRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
+  
   const requiredUnits = studentInfo.curriculumUnits || 142;
   const progressPercent = Math.min(100, Math.round((totalUnits / requiredUnits) * 100));
-
-  // Map GWA (5.0 to 1.0) to stroke-dashoffset (0 to 100)
-  // GWA of 1.0 is 100%, 5.0 is 0%.
   const strokeDashVal = gwa > 0 ? ((5.0 - gwa) / 4.0) * 282.6 : 0; 
-  // 282.6 is the circumference of the circle (r=45, C=2*pi*r = 282.7)
+
+  const handleSaveImage = async () => {
+    if (!exportRef.current) return;
+    setIsExporting(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const dataUrl = await htmlToImage.toPng(exportRef.current, {
+        backgroundColor: '#121212',
+        quality: 1.0,
+        pixelRatio: 3,
+        width: 400,
+        height: 500,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `Tres-Hold-Card-${studentInfo.name.split(',')[0] || 'Student'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to generate image.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="container">
-      {/* Profile Header */}
-      <div className="card text-center" style={{ background: 'linear-gradient(135deg, var(--primary-color), var(--primary-hover))', border: 'none', color: '#fff' }}>
-        <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 500, opacity: 0.9 }}>{studentInfo.name}</h3>
-        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.8rem', marginTop: '2px', fontWeight: 600 }}>SAIS ID: {studentInfo.studentNumber} • {studentInfo.program}</p>
-        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', marginTop: '1px' }}>{studentInfo.college}</p>
+      {/* Action Header */}
+      <div className="flex-between mb-4" style={{ padding: '0 4px' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Tres-Hold</h2>
+        <button 
+          className="btn btn-primary" 
+          onClick={handleSaveImage}
+          disabled={isExporting}
+          style={{ width: 'auto', padding: '0 16px', fontSize: '0.75rem', height: '32px' }}
+        >
+          {isExporting ? <RefreshCw size={14} className="spinner" /> : <Download size={14} />} 
+          {isExporting ? 'Generating...' : 'Save as Image'}
+        </button>
       </div>
 
-      {/* Main GWA Gauge */}
-      <div className="card text-center" style={{ padding: '24px' }}>
+      {/* 1. Visible Dashboard UI */}
+      <div className="card" style={{ 
+        background: 'linear-gradient(135deg, #1DB954 0%, #191414 100%)', 
+        border: 'none', 
+        color: '#fff',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0' }}>{studentInfo.name}</h3>
+          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.8rem', fontWeight: 600, margin: 0 }}>SAIS ID: {studentInfo.studentNumber}</p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem', margin: '4px 0 0 0' }}>{studentInfo.program}</p>
+        </div>
+      </div>
+
+      <div className="card text-center">
         <div className="gwa-circle-container">
           <svg className="gwa-circle-svg" viewBox="0 0 100 100">
             <circle className="gwa-circle-bg" cx="50" cy="50" r="45" />
-            <circle 
-              className="gwa-circle-progress" 
-              cx="50" 
-              cy="50" 
-              r="45" 
-              strokeDasharray="282.7"
-              strokeDashoffset={282.7 - strokeDashVal}
-            />
+            <circle className="gwa-circle-progress" cx="50" cy="50" r="45" strokeDasharray="282.7" strokeDashoffset={282.7 - strokeDashVal} />
           </svg>
           <div className="gwa-circle-text">
             <span className="gwa-score">{gwa > 0 ? gwa.toFixed(4) : 'N/A'}</span>
             <span className="gwa-label">Overall GWA</span>
           </div>
         </div>
-
-        {/* Latin Honors Badge */}
         <div className="mt-4">
-          <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-            <span className={`badge badge-${honors.color}`} style={{ fontSize: '0.9rem', padding: '6px 14px', letterSpacing: '0.5px' }}>
-              {honors.title}
-            </span>
-            {honors.eligible ? (
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                <CheckCircle size={12} className="text-success" /> Eligible for Graduation Honors
-              </p>
-            ) : (
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-error)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontWeight: '500' }}>
-                <AlertTriangle size={12} /> Disqualified from honors (see warnings)
-              </p>
-            )}
-          </div>
+          <span className={`badge badge-${honors.color}`}>{honors.title}</span>
         </div>
       </div>
 
-      {/* Honors Target & GWA Goals */}
-      {honors.nextTarget && (
-        <div className="card">
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: 'rgba(29, 185, 84, 0.1)' }}>
-              <TrendingUp size={20} style={{ color: 'var(--primary-color)' }} />
+      <div className="card">
+        <div className="flex-between mb-2">
+          <div className="d-flex align-center gap-2">
+            <BookOpen size={16} className="text-success" />
+            <h4 style={{ fontSize: '0.85rem' }}>Curriculum Progress</h4>
+          </div>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{totalUnits} / {requiredUnits} u</span>
+        </div>
+        <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', backgroundColor: 'var(--primary-color)', width: `${progressPercent}%` }} />
+        </div>
+      </div>
+
+      {honors.warnings && honors.warnings.length > 0 && (
+        <div className="card" style={{ backgroundColor: 'rgba(226, 33, 52, 0.08)' }}>
+          <div className="d-flex align-center gap-2 mb-2">
+            <AlertTriangle size={16} className="text-error" />
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--color-error)' }}>Warnings</h4>
+          </div>
+          <ul style={{ paddingLeft: '20px', fontSize: '0.75rem', color: 'var(--text-main)', textAlign: 'left' }}>
+            {honors.warnings.map((warn, i) => <li key={i}>{warn}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {/* 2. HIDDEN EXPORT CARD (Minimalist, No Labels) */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div 
+          ref={exportRef} 
+          style={{ 
+            width: '400px', 
+            height: '500px', 
+            background: '#121212', 
+            padding: '50px 40px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            color: 'white',
+            fontFamily: 'var(--font-sans)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Decorative background branding */}
+          <div style={{ position: 'absolute', top: '5%', right: '-15%', opacity: 0.04 }}>
+            <GraduationCap size={350} color="white" />
+          </div>
+          <div style={{ position: 'absolute', bottom: '8%', left: '50%', transform: 'translateX(-50%)', opacity: 0.2 }}>
+             <span style={{ fontSize: '12px', fontWeight: 900, letterSpacing: '0.5em', color: '#1DB954' }}>TRES-HOLD</span>
+          </div>
+
+          {/* GWA Centerpiece - High Impact, No Label */}
+          <div style={{ position: 'relative', textAlign: 'center', marginBottom: '40px' }}>
+            <div style={{ 
+              fontSize: '5rem', 
+              fontWeight: 900, 
+              color: '#1DB954', 
+              lineHeight: 1, 
+              margin: '0',
+              textShadow: '0 0 30px rgba(29, 185, 84, 0.4)'
+            }}>
+              {gwa > 0 ? gwa.toFixed(4) : 'N/A'}
             </div>
-            <div style={{ flex: 1 }}>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '4px' }}>Target: {honors.nextTarget}</h4>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                You are <strong className="text-warning">{honors.diffToNext}</strong> grade points away from reaching the GWA threshold of <strong>{honors.nextTargetGwa.toFixed(2)}</strong>.
-              </p>
-              <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                {/* Visual indicator of distance to next target */}
-                <div 
-                  style={{ 
-                    height: '100%', 
-                    backgroundColor: 'var(--primary-color)', 
-                    width: `${Math.max(10, Math.min(95, (1 - (gwa - honors.nextTargetGwa)) * 100))}%` 
-                  }} 
-                />
+          </div>
+
+          {/* Student Info Block - Minimalist (Values Only) */}
+          <div style={{ width: '100%', textAlign: 'center' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{studentInfo.name}</div>
+            </div>
+
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 500, color: '#B3B3B3', maxWidth: '300px', margin: '0 auto' }}>{studentInfo.program}</div>
+            </div>
+
+            <div>
+              <div style={{ marginTop: '12px' }}>
+                <span style={{ 
+                  backgroundColor: honors.color === 'gold' ? '#F59B23' : (honors.color === 'primary' ? '#1DB954' : '#535353'),
+                  color: honors.color === 'secondary' ? 'white' : 'black',
+                  padding: '10px 32px',
+                  borderRadius: '2px',
+                  fontSize: '18px',
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                }}>
+                  {honors.title}
+                </span>
               </div>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Curriculum Units Completed Progress */}
-      <div className="card">
-        <div className="flex-between" style={{ marginBottom: '8px' }}>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <BookOpen size={16} className="text-success" />
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600 }}>Curriculum Progress</h4>
-          </div>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>{totalUnits} / {requiredUnits} units</span>
-        </div>
-        <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-          <div 
-            style={{ 
-              height: '100%', 
-              backgroundColor: 'var(--secondary-color)', 
-              width: `${progressPercent}%`,
-              transition: 'width 0.5s ease-out'
-            }} 
-          />
-        </div>
-        <p style={{ fontSize: '0.75rem', marginTop: '6px', color: 'var(--text-muted)' }}>
-          You have completed <strong>{progressPercent}%</strong> of the units required for graduation.
-        </p>
       </div>
-
-      {/* Warnings & Notices */}
-      {honors.warnings && honors.warnings.length > 0 && (
-        <div className="card" style={{ backgroundColor: 'rgba(226, 33, 52, 0.08)' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-            <AlertTriangle size={18} className="text-error" />
-            <h4 style={{ fontSize: '0.9rem', color: 'var(--color-error)' }}>Graduation Honors Warnings</h4>
-          </div>
-          <ul style={{ paddingLeft: '20px', fontSize: '0.8rem', color: 'var(--text-main)', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {honors.warnings.map((warn, i) => (
-              <li key={i}>{warn}</li>
-            ))}
-          </ul>
-          <p style={{ fontSize: '0.72rem', marginTop: '8px', color: 'var(--text-muted)' }}>
-            *UPLB rules state that candidates for graduation honors must not have failed, dropped, or incomplete academic courses on their transcript.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

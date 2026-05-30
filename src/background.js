@@ -1,5 +1,5 @@
 /**
- * Background Service Worker for UPLB Grade Calculator Extension
+ * Background Service Worker for Tres-Hold Extension
  * 
  * This script monitors network requests to the AMIS API to capture the 
  * Authorization token automatically.
@@ -37,4 +37,4 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
   ["requestHeaders", "extraHeaders"]
 );
 
-console.log("UPLB Grade Calculator background worker initialized.");
+console.log("Tres-Hold background worker initialized.");

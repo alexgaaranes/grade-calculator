@@ -15,31 +15,26 @@ function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [simSemesters, setSimSemesters] = useState([]);
 
-  // Load initial state from chrome.storage.local or fallback to LocalStorage
+  // Load state from chrome.storage.local (Extension-Only)
   useEffect(() => {
-    const loadData = async () => {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['grades_semesters', 'grades_student_info', 'grades_theme'], (result) => {
-          if (result.grades_semesters) setSemesters(result.grades_semesters);
-          if (result.grades_student_info) setStudentInfo(result.grades_student_info);
-          if (result.grades_theme) setTheme(result.grades_theme);
-          setIsLoaded(true);
-        });
-      } else {
-        const savedSemesters = localStorage.getItem('grades_semesters');
-        const savedInfo = localStorage.getItem('grades_student_info');
-        const savedTheme = localStorage.getItem('grades_theme');
-        
-        if (savedSemesters) setSemesters(JSON.parse(savedSemesters));
-        if (savedInfo) setStudentInfo(JSON.parse(savedInfo));
-        if (savedTheme) setTheme(savedTheme);
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['grades_semesters', 'grades_student_info', 'grades_theme'], (result) => {
+        if (result.grades_semesters) setSemesters(result.grades_semesters);
+        if (result.grades_student_info) setStudentInfo(result.grades_student_info);
+        if (result.grades_theme) setTheme(result.grades_theme);
         setIsLoaded(true);
-      }
-    };
-    loadData();
+      });
+    } else {
+      // Local development fallback
+      const savedSemesters = localStorage.getItem('grades_semesters');
+      const savedInfo = localStorage.getItem('grades_student_info');
+      if (savedSemesters) setSemesters(JSON.parse(savedSemesters));
+      if (savedInfo) setStudentInfo(JSON.parse(savedInfo));
+      setIsLoaded(true);
+    }
   }, []);
 
-  // Sync state changes with storage
+  // Sync state changes with extension storage
   useEffect(() => {
     if (!isLoaded) return;
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -63,15 +58,11 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.set({ grades_theme: theme });
-    } else {
-      localStorage.setItem('grades_theme', theme);
     }
   }, [theme, isLoaded]);
 
-  // Show nothing until state is loaded from storage
   if (!isLoaded) return null;
 
-  // If there are no semesters, show the Connect screen to collect credentials/JSON first
   if (semesters.length === 0) {
     return (
       <main style={{ width: '100%' }}>
@@ -109,41 +100,27 @@ function App() {
 
   return (
     <>
-      {/* Main View Container */}
       <main style={{ width: '100%' }}>
         {renderActiveView()}
       </main>
 
-      {/* Sticky Bottom Navigation Bar */}
       <nav className="bottom-nav">
-        <button 
-          className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
-        >
+        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
           <LayoutDashboard size={20} />
           <span className="nav-label">Dashboard</span>
         </button>
 
-        <button 
-          className={`nav-item ${activeTab === 'grades' ? 'active' : ''}`}
-          onClick={() => setActiveTab('grades')}
-        >
+        <button className={`nav-item ${activeTab === 'grades' ? 'active' : ''}`} onClick={() => setActiveTab('grades')}>
           <GraduationCap size={20} />
           <span className="nav-label">Grades</span>
         </button>
 
-        <button 
-          className={`nav-item ${activeTab === 'what-if' ? 'active' : ''}`}
-          onClick={() => setActiveTab('what-if')}
-        >
+        <button className={`nav-item ${activeTab === 'what-if' ? 'active' : ''}`} onClick={() => setActiveTab('what-if')}>
           <Sparkles size={20} />
           <span className="nav-label">What-If</span>
         </button>
 
-        <button 
-          className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
+        <button className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
           <Settings size={20} />
           <span className="nav-label">Settings</span>
         </button>
